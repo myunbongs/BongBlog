@@ -280,3 +280,5 @@ pip-selfcheck.json
 # End of https://www.toptal.com/developers/gitignore/api/venv,python,pycharm
 .idea/
 migrations/
+
+blog_main/_media/

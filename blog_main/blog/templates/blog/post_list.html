@@ -39,7 +39,11 @@
     <div class="container my-3">
         <div class="row">
             <div class="col-md-8">
-                <h1>Blog</h1>
+                <h1>Blog
+                    {%if category %} in category '{{category}}'{%endif%}
+                    {%if tag %} in tag '{{tag}}'{%endif%}
+                </h1>
+
 
                 {% for p in post_list %}
                 <!-- Blog Post -->
@@ -48,6 +52,16 @@
                     <img class="card-img-top" src="{{ p.head_image.url }}" alt="{{ p }} head image">
                     {% else %}
                     <img class="card-img-top" src="https://picsum.photos/800/200" alt="random image">
+                    {% endif %}
+
+                    {% if p.tags.exists %}
+                      <br />
+                      <i class="fas fa-tags"></i>
+                      {% for tag in p.tags.iterator %}
+                      <a href="{{tag.get_absolute_url}}">{{tag}}</a>
+                      {% endfor %}
+                      <br />
+                      <br />
                     {% endif %}
 
 
