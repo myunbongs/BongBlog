@@ -55,8 +55,9 @@
 
       {% url 'base' as base %}
       {% url 'about_me' as about_me %}
+      {% url 'create_post' as create_post %}
 
-      {% if request.path != base and request.path != about_me %}
+      {% if request.path != base and request.path != about_me and request.path != create_post%}
 
       <!-- Sidebar Widgets Column -->
       <div class="col-md-4">
