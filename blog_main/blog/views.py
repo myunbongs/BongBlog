@@ -1,8 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 
+from .forms import CommentForm
 from .models import Post, Category, Tag
 
 
@@ -16,6 +17,7 @@ class PostList(ListView):
         context['no_category_post_count'] = Post.objects.filter(category=None).count()
         return context
 
+
 class PostDetail(DetailView):
     model = Post
 
@@ -23,12 +25,13 @@ class PostDetail(DetailView):
         context = super(PostDetail, self).get_context_data()
         context['categories'] = Category.objects.all()
         context['no_category_post_count'] = Post.objects.filter(category=None).count()
+        context['comment_form'] = CommentForm
         return context
 
 
-class PostCreate(LoginRequiredMixin, UserPassesTestMixin ,CreateView):
+class PostCreate(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Post
-    #fields = ['title', 'hook_text', 'content', 'head_image', 'file_upload', 'category']
+    # fields = ['title', 'hook_text', 'content', 'head_image', 'file_upload', 'category']
     fields = ['title', 'content', 'head_image', 'file_upload', 'category', 'tags']
 
     def test_func(self):
@@ -43,12 +46,13 @@ class PostCreate(LoginRequiredMixin, UserPassesTestMixin ,CreateView):
         else:
             return redirect('/blog/')
 
+
 class PostUpdate(LoginRequiredMixin, UpdateView):
     model = Post
-    #fields = ['title', 'hook_text', 'content', 'head_image', 'file_upload', 'category']
+    # fields = ['title', 'hook_text', 'content', 'head_image', 'file_upload', 'category']
     fields = ['title', 'content', 'head_image', 'file_upload', 'category', 'tags']
 
-    template_name = 'blog/update_post.html'
+    template_name = 'blog/post_update_form.html'
 
     def dispatch(self, request, *args, **kwargs):
         current_user = request.user
@@ -57,13 +61,14 @@ class PostUpdate(LoginRequiredMixin, UpdateView):
         else:
             raise PermissionDenied
 
+
 def categories_posts(request, slug):
-    if slug=='no-category':
+    if slug == 'no-category':
         category = '미분류'
         post_list = Post.objects.filter(category=None)
     else:
-        category = Category.objects.get(slug = slug)
-        post_list = Post.objects.filter(category = category)
+        category = Category.objects.get(slug=slug)
+        post_list = Post.objects.filter(category=category)
 
     context = {
         'categories': Category.objects.all(),
@@ -77,7 +82,7 @@ def categories_posts(request, slug):
 
 def tag_page(request, slug):
     tag = Tag.objects.get(slug=slug)
-    post_list = Post.objects.filter(tags = tag)
+    post_list = Post.objects.filter(tags=tag)
 
     context = {
         'tags': Tag.objects.all(),
@@ -86,3 +91,21 @@ def tag_page(request, slug):
     }
 
     return render(request, 'blog/post_list.html', context)
+
+def new_comment(request, pk):
+    if request.user.is_authenticated:
+        post = get_object_or_404(Post, pk=pk)
+
+        if request.method == 'POST':
+            comment_form = CommentForm(request.POST)
+            if comment_form.is_valid():
+                comment = comment_form.save(commit =  False)
+                comment.post = post
+                comment.author = request.user
+                comment.save()
+                return redirect(comment.get_absolute_url())
+
+            else:
+                return redirect(post.get_absolute_url())
+        else:
+            raise PermissionDenied
